@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Net Worth — Quản lý tài sản cá nhân</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#687386;--line:#e7eaf0;
+  --primary:#5b4bdb;--primary2:#7a6cf0;--green:#15966b;--red:#d94b62;
+  --shadow:0 8px 30px rgba(31,42,68,.07);--radius:18px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text)}
+.container{max-width:1100px;margin:auto;padding:24px 18px 50px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+h1{margin:0;font-size:28px;letter-spacing:-.5px}
+.subtitle{color:var(--muted);margin-top:5px;font-size:14px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;border-radius:11px;padding:10px 14px;font-weight:650;cursor:pointer;font-size:14px}
+.btn{background:#fff;border:1px solid var(--line);color:var(--text)}
+.btn.primary{background:var(--primary);color:#fff}
+.btn.danger{color:var(--red)}
+.hero{background:linear-gradient(135deg,#5142c8,#796cf1);color:#fff;border-radius:24px;padding:25px;box-shadow:var(--shadow);margin-bottom:18px}
+.hero-label{opacity:.82;font-size:14px}.net{font-size:38px;font-weight:800;margin:6px 0 20px}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.summary .box{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:13px}
+.summary .label{font-size:12px;opacity:.78}.summary .value{font-weight:750;margin-top:4px;font-size:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.title-wrap{display:flex;align-items:center;gap:10px}.icon{font-size:23px}
+h2{font-size:17px;margin:0}.hint{font-size:12px;color:var(--muted);margin-top:3px}
+.rows{display:flex;flex-direction:column;gap:9px}
+.row{display:grid;grid-template-columns:minmax(100px,1fr) 145px 38px;gap:8px;align-items:center}
+input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 11px;outline:none;font-size:14px;background:#fbfcfe;color:var(--text)}
+input:focus{border-color:var(--primary2);box-shadow:0 0 0 3px rgba(91,75,219,.1)}
+.amount{text-align:right}
+.remove{background:#f7f8fb;color:#8992a3;padding:8px;font-size:16px}
+.remove:hover{background:#fff0f2;color:var(--red)}
+.add{margin-top:10px;color:var(--primary);background:#f2f0ff;width:100%}
+.total{display:flex;justify-content:space-between;border-top:1px dashed var(--line);margin-top:14px;padding-top:12px;font-size:13px;color:var(--muted)}
+.total strong{font-size:15px;color:var(--text)}
+.liability{border-top:3px solid #f0a0ae}
+.liability .total strong{color:var(--red)}
+.assets-total{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:17px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow)}
+.assets-total strong{font-size:20px}
+.footer-note{color:var(--muted);font-size:12px;text-align:center;margin-top:18px}
+.empty{color:var(--muted);font-size:13px;padding:4px 0}
+@media(max-width:760px){
+ header{align-items:flex-start;flex-direction:column} .grid{grid-template-columns:1fr}
+ .summary{grid-template-columns:1fr 1fr}.net{font-size:32px}
+ .row{grid-template-columns:1fr 125px 36px}
+}
+</style>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#5b4bdb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tài sản">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+body{padding-bottom:env(safe-area-inset-bottom)}
+@media (display-mode: standalone){body{padding-top:env(safe-area-inset-top)}.container{padding-top:18px}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div>
+    <h1>💰 Net Worth</h1>
+    <div class="subtitle">Theo dõi tài sản cá nhân của bạn — đơn vị: VNĐ</div>
+  </div>
+  <div class="actions">
+    <button class="btn" onclick="exportData()">Xuất dữ liệu</button>
+    <button class="btn" onclick="document.getElementById('importFile').click()">Nhập dữ liệu</button>
+    <input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="btn danger" onclick="resetAll()">Xóa dữ liệu</button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-label">TÀI SẢN RÒNG HIỆN TẠI</div>
+  <div class="net" id="netWorth">0 ₫</div>
+  <div class="summary">
+    <div class="box"><div class="label">Tổng tài sản</div><div class="value" id="totalAssets">0 ₫</div></div>
+    <div class="box"><div class="label">Tổng nợ</div><div class="value" id="totalDebt">0 ₫</div></div>
+    <div class="box"><div class="label">Tiền + đầu tư</div><div class="value" id="liquidAssets">0 ₫</div></div>
+    <div class="box"><div class="label">Số khoản mục</div><div class="value" id="itemCount">0</div></div>
+  </div>
+</section>
+
+<div class="grid" id="cards"></div>
+
+<div class="assets-total">
+  <span>Tài sản ròng = Tổng tài sản − Tổng nợ</span>
+  <strong id="netBottom">0 ₫</strong>
+</div>
+<div class="footer-note">Dữ liệu được lưu tự động trong trình duyệt trên thiết bị này. Không gửi lên máy chủ.</div>
+</div>
+
+<script>
+const categories = [
+ {id:'cash', icon:'💵', title:'Tiền mặt', hint:'Tiền đang giữ bằng tiền mặt', liability:false},
+ {id:'bank', icon:'🏦', title:'Tiền ngân hàng', hint:'Tiền trong tài khoản / tiền gửi', liability:false},
+ {id:'stocks', icon:'📈', title:'Cổ phiếu', hint:'Giá trị thị trường hiện tại', liability:false},
+ {id:'gold', icon:'🥇', title:'Vàng', hint:'Giá trị vàng đang nắm giữ', liability:false},
+ {id:'loans', icon:'🤝', title:'Tiền cho vay', hint:'Khoản người khác đang nợ bạn', liability:false},
+ {id:'phones', icon:'📱', title:'Đầu tư điện thoại', hint:'Giá trị vốn / hàng tồn điện thoại', liability:false},
+ {id:'debt', icon:'💳', title:'Nợ phải trả', hint:'Khoản bạn đang nợ người khác / ngân hàng', liability:true}
+];
+
+let data = JSON.parse(localStorage.getItem('networth-data') || '{}');
+
+function makeCard(c){
+ const card=document.createElement('section');
+ card.className='card '+(c.liability?'liability':'');
+ card.innerHTML=`
+  <div class="card-head">
+    <div class="title-wrap"><span class="icon">${c.icon}</span><div><h2>${c.title}</h2><div class="hint">${c.hint}</div></div></div>
+  </div>
+  <div class="rows" id="rows-${c.id}"></div>
+  <button class="add" onclick="addRow('${c.id}')">＋ Thêm khoản mục</button>
+  <div class="total"><span>${c.liability?'Tổng nợ':'Tổng '+c.title.toLowerCase()}</span><strong id="sum-${c.id}">0 ₫</strong></div>`;
+ return card;
+}
+const cards=document.getElementById('cards');
+categories.forEach(c=>cards.appendChild(makeCard(c)));
+
+function addRow(cat, name='', amount=''){
+ const rows=document.getElementById('rows-'+cat);
+ const row=document.createElement('div'); row.className='row';
+ row.innerHTML=`<input class="name" placeholder="Tên khoản mục" value="${escapeHtml(name)}">
+                <input class="amount" type="number" min="0" step="1000" placeholder="0" value="${amount}">
+                <button class="remove" title="Xóa">×</button>`;
+ row.querySelector('.remove').onclick=()=>{row.remove();save();calculate()};
+ row.querySelectorAll('input').forEach(x=>x.addEventListener('input',()=>{save();calculate()}));
+ rows.appendChild(row);
+}
+function escapeHtml(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
+
+function getRows(cat){
+ return [...document.querySelectorAll('#rows-'+cat+' .row')].map(r=>({
+   name:r.querySelector('.name').value,
+   amount:Number(r.querySelector('.amount').value)||0
+ }));
+}
+function save(){
+ const out={};
+ categories.forEach(c=>out[c.id]=getRows(c));
+ localStorage.setItem('networth-data',JSON.stringify(out));
+}
+function load(){
+ categories.forEach(c=>{
+   const arr=Array.isArray(data[c.id])?data[c.id]:[];
+   if(arr.length) arr.forEach(x=>addRow(c,x.name,x.amount));
+   else addRow(c);
+ });
+ calculate();
+}
+function fmt(n){
+ return new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n);
+}
+function calculate(){
+ let assets=0,debt=0,liquid=0,count=0;
+ categories.forEach(c=>{
+   const sum=getRows(c).reduce((a,x)=>a+x.amount,0);
+   document.getElementById('sum-'+c.id).textContent=fmt(sum);
+   count+=getRows(c).filter(x=>x.name||x.amount).length;
+   if(c.liability) debt+=sum; else {
+     assets+=sum;
+     if(['cash','bank','stocks','gold'].includes(c.id)) liquid+=sum;
+   }
+ });
+ const net=assets-debt;
+ document.getElementById('netWorth').textContent=fmt(net);
+ document.getElementById('netBottom').textContent=fmt(net);
+ document.getElementById('totalAssets').textContent=fmt(assets);
+ document.getElementById('totalDebt').textContent=fmt(debt);
+ document.getElementById('liquidAssets').textContent=fmt(liquid);
+ document.getElementById('itemCount').textContent=count;
+}
+function resetAll(){
+ if(!confirm('Bạn có chắc muốn xóa toàn bộ dữ liệu?')) return;
+ localStorage.removeItem('networth-data'); location.reload();
+}
+function exportData(){
+ save();
+ const blob=new Blob([localStorage.getItem('networth-data')||'{}'],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+ a.download='net-worth-backup.json';a.click();URL.revokeObjectURL(a.href);
+}
+function importData(e){
+ const file=e.target.files[0]; if(!file)return;
+ const reader=new FileReader();
+ reader.onload=()=>{
+   try{
+     const obj=JSON.parse(reader.result);
+     localStorage.setItem('networth-data',JSON.stringify(obj)); location.reload();
+   }catch{alert('File dữ liệu không hợp lệ.');}
+ };
+ reader.readAsText(file);
+}
+load();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+</script>
+</body>
+</html>
